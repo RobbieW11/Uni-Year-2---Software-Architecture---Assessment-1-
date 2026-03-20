@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KV5035 – Conference Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Variables ── */
+    :root {
+      --bg:       #0d0f14;
+      --surface:  #13161e;
+      --surface2: #1c2030;
+      --border:   #ffffff12;
+      --accent:   #e8ff47;
+      --accent2:  #47c8ff;
+      --text:     #e8eaf0;
+      --muted:    #7a7f94;
+      --danger:   #ff5f5f;
+      --radius:   10px;
+      --font-display: 'Bebas Neue', sans-serif;
+      --font-body:    'DM Sans', sans-serif;
+      --font-mono:    'DM Mono', monospace;
+    }
+
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 15px;
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Noise overlay ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+      opacity: .4;
+    }
+
+    /* ── Layout ── */
+    .shell {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(13, 15, 20, .88);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 clamp(1rem, 5vw, 3rem);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      height: 62px;
+    }
+    .logo {
+      font-family: var(--font-display);
+      font-size: 1.7rem;
+      letter-spacing: .06em;
+      color: var(--accent);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .logo span { color: var(--text); }
+
+    nav { display: flex; gap: 4px; }
+    .tab-btn {
+      background: none;
+      border: 1px solid transparent;
+      color: var(--muted);
+      font-family: var(--font-body);
+      font-size: .85rem;
+      font-weight: 500;
+      letter-spacing: .04em;
+      padding: .45rem 1.1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all .2s;
+      text-transform: uppercase;
+    }
+    .tab-btn:hover { color: var(--text); border-color: var(--border); }
+    .tab-btn.active {
+      color: var(--bg);
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    /* ── Pages ── */
+    .page { display: none; animation: fadeUp .35s ease both; }
+    .page.active { display: block; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    main { padding: clamp(2rem, 5vw, 4rem) clamp(1rem, 5vw, 3rem); max-width: 1200px; margin: 0 auto; }
+
+    /* ── Section headings ── */
+    .section-eyebrow {
+      font-family: var(--font-mono);
+      font-size: .72rem;
+      color: var(--accent);
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      margin-bottom: .5rem;
+    }
+    .section-title {
+      font-family: var(--font-display);
+      font-size: clamp(2.8rem, 6vw, 5rem);
+      letter-spacing: .04em;
+      line-height: 1;
+      color: var(--text);
+      margin-bottom: 2.5rem;
+    }
+
+    /* ══════════════════════════════════
+       ABOUT PAGE
+    ══════════════════════════════════ */
+    .about-hero {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      align-items: start;
+      margin-bottom: 3rem;
+    }
+    @media (max-width: 700px) { .about-hero { grid-template-columns: 1fr; } }
+
+    .about-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: .35rem 1rem .35rem .5rem;
+      font-family: var(--font-mono);
+      font-size: .75rem;
+      color: var(--muted);
+      margin-bottom: 1.2rem;
+    }
+    .about-badge-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: .4; }
+    }
+
+    .about-tagline {
+      font-size: 1.05rem;
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 480px;
+    }
+
+    .about-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1rem;
+    }
+    .info-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.4rem 1.6rem;
+      transition: border-color .2s, transform .2s;
+    }
+    .info-card:hover { border-color: var(--accent2); transform: translateY(-3px); }
+    .info-card-label {
+      font-family: var(--font-mono);
+      font-size: .68rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      margin-bottom: .6rem;
+    }
+    .info-card-value {
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--text);
+    }
+    .info-card-value.accent { color: var(--accent); font-family: var(--font-display); font-size: 1.4rem; letter-spacing: .04em; }
+
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 2.5rem 0;
+    }
+
+    .api-config-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.6rem;
+    }
+    .api-config-block h3 {
+      font-family: var(--font-mono);
+      font-size: .78rem;
+      color: var(--accent2);
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      margin-bottom: 1rem;
+    }
+    .config-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .8rem;
+      align-items: flex-end;
+    }
+    .config-field { flex: 1; min-width: 200px; }
+    .config-field label {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: .7rem;
+      color: var(--muted);
+      margin-bottom: .4rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    .config-field input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: .6rem .9rem;
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: .82rem;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .config-field input:focus { border-color: var(--accent2); }
+    .save-btn {
+      background: var(--accent2);
+      color: var(--bg);
+      border: none;
+      border-radius: 6px;
+      padding: .62rem 1.4rem;
+      font-family: var(--font-body);
+      font-weight: 500;
+      font-size: .85rem;
+      cursor: pointer;
+      transition: opacity .2s;
+      white-space: nowrap;
+    }
+    .save-btn:hover { opacity: .85; }
+
+    /* ══════════════════════════════════
+       AUTHORS PAGE
+    ══════════════════════════════════ */
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .7rem;
+      align-items: center;
+      margin-bottom: 1.8rem;
+    }
+    .search-wrap {
+      position: relative;
+      flex: 1;
+      min-width: 200px;
+      max-width: 360px;
+    }
+    .search-wrap svg {
+      position: absolute;
+      left: .8rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+    }
+    .search-wrap input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: .6rem .9rem .6rem 2.4rem;
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: .88rem;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .search-wrap input:focus { border-color: var(--accent); }
+    .search-wrap input::placeholder { color: var(--muted); }
+
+    .filter-input {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: .6rem .9rem;
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: .82rem;
+      outline: none;
+      width: 130px;
+      transition: border-color .2s;
+    }
+    .filter-input:focus { border-color: var(--accent); }
+    .filter-input::placeholder { color: var(--muted); }
+
+    .load-btn {
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      border-radius: 6px;
+      padding: .62rem 1.4rem;
+      font-family: var(--font-body);
+      font-weight: 500;
+      font-size: .85rem;
+      cursor: pointer;
+      transition: opacity .2s, transform .15s;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+    .load-btn:hover { opacity: .85; transform: translateY(-1px); }
+    .load-btn:active { transform: translateY(0); }
+
+    /* Author grid */
+    .author-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+    .author-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.3rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+      transition: border-color .2s, transform .2s;
+      animation: fadeUp .3s ease both;
+    }
+    .author-card:hover { border-color: var(--accent); transform: translateY(-3px); }
+    .author-avatar {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: var(--surface2);
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      color: var(--accent);
+      margin-bottom: .2rem;
+    }
+    .author-name {
+      font-weight: 500;
+      font-size: .98rem;
+      color: var(--text);
+    }
+    .author-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .4rem;
+      margin-top: .2rem;
+    }
+    .chip {
+      font-family: var(--font-mono);
+      font-size: .68rem;
+      padding: .2rem .6rem;
+      border-radius: 4px;
+      background: var(--surface2);
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .chip.id-chip { color: var(--accent2); border-color: #47c8ff30; background: #47c8ff0a; }
+    .chip.inst-chip { color: #b8a9ff; border-color: #b8a9ff30; background: #b8a9ff0a; }
+
+    /* ══════════════════════════════════
+       PRESENTATIONS PAGE
+    ══════════════════════════════════ */
+    .pres-list { display: flex; flex-direction: column; gap: 1rem; }
+    .pres-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem 1.8rem;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: .8rem 1.5rem;
+      align-items: start;
+      transition: border-color .2s;
+      animation: fadeUp .3s ease both;
+    }
+    .pres-card:hover { border-color: var(--accent2); }
+    .pres-title {
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: .45rem;
+    }
+    .pres-abstract {
+      font-size: .84rem;
+      color: var(--muted);
+      line-height: 1.65;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .pres-abstract.expanded { -webkit-line-clamp: unset; }
+    .pres-footer {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;
+      align-items: center;
+      margin-top: .3rem;
+      border-top: 1px solid var(--border);
+      padding-top: .8rem;
+    }
+    .pres-type-badge {
+      font-family: var(--font-mono);
+      font-size: .68rem;
+      padding: .25rem .7rem;
+      border-radius: 4px;
+      background: #e8ff4710;
+      color: var(--accent);
+      border: 1px solid #e8ff4730;
+    }
+    .pres-link {
+      font-family: var(--font-mono);
+      font-size: .72rem;
+      color: var(--accent2);
+      text-decoration: none;
+      padding: .25rem .7rem;
+      border: 1px solid #47c8ff30;
+      border-radius: 4px;
+      background: #47c8ff08;
+      transition: background .2s;
+    }
+    .pres-link:hover { background: #47c8ff18; }
+    .pres-id-chip {
+      margin-left: auto;
+      font-family: var(--font-mono);
+      font-size: .7rem;
+      color: var(--muted);
+    }
+    .expand-btn {
+      background: none;
+      border: none;
+      color: var(--accent2);
+      font-family: var(--font-mono);
+      font-size: .72rem;
+      cursor: pointer;
+      padding: .25rem .7rem;
+      border-radius: 4px;
+      transition: background .2s;
+    }
+    .expand-btn:hover { background: #47c8ff12; }
+
+    /* Right-side card meta column */
+    .pres-side { display: flex; flex-direction: column; align-items: flex-end; gap: .5rem; }
+
+    /* ── Pagination ── */
+    .pagination {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      margin-top: 2rem;
+      flex-wrap: wrap;
+    }
+    .page-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: .78rem;
+      padding: .45rem .9rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .page-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+    .page-btn.current { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+    .page-btn:disabled { opacity: .3; cursor: not-allowed; }
+    .page-info { font-family: var(--font-mono); font-size: .75rem; color: var(--muted); padding: 0 .5rem; }
+
+    /* ── States ── */
+    .state-box {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--muted);
+    }
+    .state-box svg { margin-bottom: 1rem; opacity: .4; }
+    .state-box p { font-size: .9rem; margin-top: .5rem; }
+    .state-box strong { color: var(--text); display: block; font-size: 1rem; margin-bottom: .3rem; }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      margin: 0 auto 1rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-toast {
+      background: #ff5f5f12;
+      border: 1px solid #ff5f5f40;
+      color: var(--danger);
+      border-radius: var(--radius);
+      padding: 1rem 1.4rem;
+      font-size: .88rem;
+      margin-bottom: 1.5rem;
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 4px; }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .pres-card { grid-template-columns: 1fr; }
+      .pres-side { align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- ══ HEADER ══ -->
+  <header>
+    <a class="logo" href="#">KV<span>5035</span></a>
+    <nav>
+      <button class="tab-btn active" data-page="about">About</button>
+      <button class="tab-btn" data-page="authors">Authors</button>
+      <button class="tab-btn" data-page="presentations">Presentations</button>
+    </nav>
+  </header>
+
+  <!-- ══ MAIN ══ -->
+  <main>
+
+    <!-- ══ ABOUT PAGE ══ -->
+    <section class="page active" id="page-about">
+      <div class="section-eyebrow">Welcome</div>
+      <div class="section-title">Conference Portal</div>
+
+      <div class="about-hero">
+        <div>
+          <div class="about-badge">
+            <span class="about-badge-dot"></span>
+            Live API Connection
+          </div>
+          <p class="about-tagline">
+            A front-end interface for the KV5035 Web API. Browse authors and presentations
+            fetched in real time from the conference database.
+          </p>
+        </div>
+        <div class="about-cards">
+          <div class="info-card">
+            <div class="info-card-label">Module</div>
+            <div class="info-card-value accent">KV5035</div>
+          </div>
+          <div class="info-card">
+            <div class="info-card-label">Module Title</div>
+            <div class="info-card-value">Software Architecture</div>
+          </div>
+          <div class="info-card">
+            <div class="info-card-label">Developer</div>
+            <div class="info-card-value">Robbie Woodruff</div>
+          </div>
+          <div class="info-card">
+            <div class="info-card-label">Student ID</div>
+            <div class="info-card-value">w24013042</div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider" />
+
+      <div class="api-config-block">
+        <h3>⚙ API Configuration</h3>
+        <div class="config-row">
+          <div class="config-field">
+            <label>Base URL</label>
+            <input type="text" id="cfg-url" placeholder="https://w24013042.nuwebspace.co.uk/KV5035/assessment1/api" />
+          </div>
+          <div class="config-field">
+            <label>API Key (Bearer)</label>
+            <input type="text" id="cfg-key" value="w24013042" />
+          </div>
+          <button class="save-btn" onclick="saveConfig()">Save &amp; Test</button>
+        </div>
+        <p id="cfg-status" style="margin-top:.9rem;font-family:var(--font-mono);font-size:.75rem;color:var(--muted);"></p>
+      </div>
+    </section>
+
+    <!-- ══ AUTHORS PAGE ══ -->
+    <section class="page" id="page-authors">
+      <div class="section-eyebrow">Directory</div>
+      <div class="section-title">Authors</div>
+
+      <div class="toolbar">
+        <div class="search-wrap">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" id="author-search" placeholder="Filter by name…" oninput="filterAuthors()" />
+        </div>
+        <input class="filter-input" type="number" id="author-id-filter" placeholder="Author ID" min="1" />
+        <input class="filter-input" type="number" id="pres-id-filter" placeholder="Pres ID" min="1" />
+        <input class="filter-input" type="number" id="author-page" placeholder="Page" min="1" style="width:80px" />
+        <input class="filter-input" type="number" id="author-size" placeholder="Size" min="1" style="width:80px" />
+        <button class="load-btn" onclick="loadAuthors()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Load
+        </button>
+      </div>
+
+      <div id="authors-error"></div>
+      <div id="authors-state" class="state-box">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <strong>No authors loaded</strong>
+        <p>Configure your API above, then click Load.</p>
+      </div>
+      <div class="author-grid" id="authors-grid"></div>
+
+      <div class="pagination" id="authors-pagination"></div>
+    </section>
+
+    <!-- ══ PRESENTATIONS PAGE ══ -->
+    <section class="page" id="page-presentations">
+      <div class="section-eyebrow">Schedule</div>
+      <div class="section-title">Presentations</div>
+
+      <div class="toolbar">
+        <div class="search-wrap">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" id="pres-search" placeholder="Filter by title…" oninput="filterPresentations()" />
+        </div>
+        <input class="filter-input" type="number" id="pres-id-only" placeholder="Pres ID" min="1" />
+        <input class="filter-input" type="number" id="pres-page" placeholder="Page" min="1" style="width:80px" />
+        <input class="filter-input" type="number" id="pres-size" placeholder="Size" min="1" style="width:80px" />
+        <button class="load-btn" onclick="loadPresentations()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Load
+        </button>
+      </div>
+
+      <div id="pres-error"></div>
+      <div id="pres-state" class="state-box">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="m8 21 4-4 4 4"/><path d="M2 17h20"/></svg>
+        <strong>No presentations loaded</strong>
+        <p>Configure your API above, then click Load.</p>
+      </div>
+      <div class="pres-list" id="pres-list"></div>
+      <div class="pagination" id="pres-pagination"></div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  /* ───────────────────────────────────────────
+     CONFIG
+  ─────────────────────────────────────────── */
+  let API_BASE = localStorage.getItem('api_base') || 'https://w24013042.nuwebspace.co.uk/KV5035/assessment1/api';
+  let API_KEY  = localStorage.getItem('api_key')  || 'w24013042';
+
+  // Pre-fill on load
+  document.getElementById('cfg-url').value = API_BASE;
+  document.getElementById('cfg-key').value = API_KEY;
+
+  function saveConfig() {
+    API_BASE = document.getElementById('cfg-url').value.replace(/\/$/, '');
+    API_KEY  = document.getElementById('cfg-key').value.trim();
+    localStorage.setItem('api_base', API_BASE);
+    localStorage.setItem('api_key',  API_KEY);
+    const st = document.getElementById('cfg-status');
+    st.style.color = 'var(--accent)';
+    st.textContent = '✓ Configuration saved.';
+    setTimeout(() => st.textContent = '', 3000);
+  }
+
+  function headers() {
+    return { 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' };
+  }
+
+  /* ───────────────────────────────────────────
+     TABS
+  ─────────────────────────────────────────── */
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(`page-${btn.dataset.page}`).classList.add('active');
+    });
+  });
+
+  /* ───────────────────────────────────────────
+     HELPERS
+  ─────────────────────────────────────────── */
+  function initials(name) {
+    return (name || '?').split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
+  }
+  function showLoading(stateId, gridId) {
+    document.getElementById(stateId).innerHTML =
+      '<div class="spinner"></div><p>Fetching data…</p>';
+    document.getElementById(gridId).innerHTML = '';
+  }
+  function showError(errorId, stateId, msg) {
+    document.getElementById(errorId).innerHTML =
+      `<div class="error-toast">⚠ ${msg}</div>`;
+    document.getElementById(stateId).innerHTML =
+      `<strong>Something went wrong</strong><p>Check your API config on the About page.</p>`;
+  }
+
+  /* ───────────────────────────────────────────
+     AUTHORS
+  ─────────────────────────────────────────── */
+  let allAuthors = [];
+  let authorPage = 1;
+  const AUTHOR_SIZE = 24;
+
+  async function loadAuthors() {
+    if (!API_BASE) { alert('Please set your API Base URL on the About page first.'); return; }
+    showLoading('authors-state', 'authors-grid');
+    document.getElementById('authors-error').innerHTML = '';
+    document.getElementById('authors-pagination').innerHTML = '';
+
+    const authorId = document.getElementById('author-id-filter').value.trim();
+    const presId   = document.getElementById('pres-id-filter').value.trim();
+    const page     = document.getElementById('author-page').value.trim();
+    const size     = document.getElementById('author-size').value.trim();
+
+    const base = API_BASE.replace(/\/api\/?$/, '');
+    let url = `${base}/author.php?`;
+    if (authorId) url += `author-id=${authorId}&`;
+    if (presId)   url += `presentation-id=${presId}&`;
+    if (page && size) { url += `page=${page}&size=${size}&`; }
+    else if (page && !size) {
+      showError('authors-error', 'authors-state', 'Size is required when using Page.');
+      return;
+    }
+
+    try {
+      const res = await fetch(url, { headers: headers() });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (!Array.isArray(data)) throw new Error(data || 'Unexpected response');
+      allAuthors = data;
+      authorPage = 1;
+      renderAuthors();
+    } catch(e) {
+      showError('authors-error', 'authors-state', e.message);
+    }
+  }
+
+  function filterAuthors() {
+    authorPage = 1;
+    renderAuthors();
+  }
+
+  function renderAuthors() {
+    const q = document.getElementById('author-search').value.toLowerCase();
+    const filtered = allAuthors.filter(a => (a.name || '').toLowerCase().includes(q));
+
+    const totalPages = Math.ceil(filtered.length / AUTHOR_SIZE);
+    const slice = filtered.slice((authorPage - 1) * AUTHOR_SIZE, authorPage * AUTHOR_SIZE);
+
+    const grid = document.getElementById('authors-grid');
+    const state = document.getElementById('authors-state');
+
+    if (filtered.length === 0) {
+      state.innerHTML = '<strong>No authors found</strong><p>Try adjusting your filters.</p>';
+      grid.innerHTML = '';
+      document.getElementById('authors-pagination').innerHTML = '';
+      return;
+    }
+
+    state.innerHTML = '';
+    grid.innerHTML = slice.map((a, i) => `
+      <div class="author-card" style="animation-delay:${i * 0.03}s">
+        <div class="author-avatar">${initials(a.name)}</div>
+        <div class="author-name">${esc(a.name || 'Unknown')}</div>
+        <div class="author-meta">
+          <span class="chip id-chip">#${a.author_id}</span>
+          ${a.institution ? `<span class="chip inst-chip">🏛 ${esc(a.institution)}</span>` : ''}
+        </div>
+      </div>
+    `).join('');
+
+    renderPagination('authors-pagination', authorPage, totalPages, p => { authorPage = p; renderAuthors(); });
+  }
+
+  /* ───────────────────────────────────────────
+     PRESENTATIONS
+  ─────────────────────────────────────────── */
+  let allPresentations = [];
+  let presPage = 1;
+  const PRES_SIZE = 20;
+
+  async function loadPresentations() {
+    if (!API_BASE) { alert('Please set your API Base URL on the About page first.'); return; }
+    showLoading('pres-state', 'pres-list');
+    document.getElementById('pres-error').innerHTML = '';
+    document.getElementById('pres-pagination').innerHTML = '';
+
+    const presId = document.getElementById('pres-id-only').value.trim();
+    const page   = document.getElementById('pres-page').value.trim();
+    const size   = document.getElementById('pres-size').value.trim();
+    const base = API_BASE.replace(/\/api\/?$/, '');
+    let url = `${base}/presentation.php?`;
+    if (presId) url += `presentation-id=${presId}&`;
+    if (page && size) { url += `page=${page}&size=${size}&`; }
+    else if (page && !size) {
+      showError('pres-error', 'pres-state', 'Size is required when using Page.');
+      return;
+    }
+
+    try {
+      const res = await fetch(url, { headers: headers() });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (!Array.isArray(data)) throw new Error(data || 'Unexpected response');
+      allPresentations = data;
+      presPage = 1;
+      renderPresentations();
+    } catch(e) {
+      showError('pres-error', 'pres-state', e.message);
+    }
+  }
+
+  function filterPresentations() {
+    presPage = 1;
+    renderPresentations();
+  }
+
+  function renderPresentations() {
+    const q = document.getElementById('pres-search').value.toLowerCase();
+    const filtered = allPresentations.filter(p => (p.title || '').toLowerCase().includes(q));
+
+    const totalPages = Math.ceil(filtered.length / PRES_SIZE);
+    const slice = filtered.slice((presPage - 1) * PRES_SIZE, presPage * PRES_SIZE);
+
+    const list  = document.getElementById('pres-list');
+    const state = document.getElementById('pres-state');
+
+    if (filtered.length === 0) {
+      state.innerHTML = '<strong>No presentations found</strong><p>Try adjusting your filters.</p>';
+      list.innerHTML = '';
+      document.getElementById('pres-pagination').innerHTML = '';
+      return;
+    }
+
+    state.innerHTML = '';
+    list.innerHTML = slice.map((p, i) => `
+      <div class="pres-card" style="animation-delay:${i * 0.025}s" id="pcard-${p.presentation_id}">
+        <div>
+          <div class="pres-title">${esc(p.title || 'Untitled')}</div>
+          ${p.abstract ? `<div class="pres-abstract" id="abs-${p.presentation_id}">${esc(p.abstract)}</div>` : ''}
+        </div>
+        <div class="pres-side">
+          <span class="chip id-chip">#${p.presentation_id}</span>
+        </div>
+        <div class="pres-footer">
+          ${p.type_name ? `<span class="pres-type-badge">${esc(p.type_name)}</span>` : ''}
+          ${p.doi  ? `<a class="pres-link" href="https://doi.org/${esc(p.doi)}" target="_blank">DOI ↗</a>` : ''}
+          ${p.video ? `<a class="pres-link" href="${esc(p.video)}" target="_blank">Video ↗</a>` : ''}
+          ${p.abstract && p.abstract.length > 180 ? `<button class="expand-btn" onclick="toggleAbstract(${p.presentation_id})">Read more</button>` : ''}
+          <span class="pres-id-chip">ID ${p.presentation_id}</span>
+        </div>
+      </div>
+    `).join('');
+
+    renderPagination('pres-pagination', presPage, totalPages, p => { presPage = p; renderPresentations(); });
+  }
+
+  function toggleAbstract(id) {
+    const el  = document.getElementById(`abs-${id}`);
+    const btn = el?.closest('.pres-card')?.querySelector('.expand-btn');
+    if (!el) return;
+    el.classList.toggle('expanded');
+    if (btn) btn.textContent = el.classList.contains('expanded') ? 'Read less' : 'Read more';
+  }
+
+  /* ───────────────────────────────────────────
+     PAGINATION
+  ─────────────────────────────────────────── */
+  function renderPagination(containerId, current, total, onPage) {
+    const container = document.getElementById(containerId);
+    if (total <= 1) { container.innerHTML = ''; return; }
+
+    let html = `<button class="page-btn" onclick="(${onPage.toString()})(${current - 1})" ${current === 1 ? 'disabled' : ''}>← Prev</button>`;
+
+    const range = [];
+    for (let p = Math.max(1, current - 2); p <= Math.min(total, current + 2); p++) range.push(p);
+    if (range[0] > 1) { html += `<button class="page-btn" onclick="(${onPage.toString()})(1)">1</button>`; if (range[0] > 2) html += `<span class="page-info">…</span>`; }
+    range.forEach(p => {
+      html += `<button class="page-btn ${p === current ? 'current' : ''}" onclick="(${onPage.toString()})(${p})">${p}</button>`;
+    });
+    if (range[range.length - 1] < total) {
+      if (range[range.length - 1] < total - 1) html += `<span class="page-info">…</span>`;
+      html += `<button class="page-btn" onclick="(${onPage.toString()})(${total})">${total}</button>`;
+    }
+
+    html += `<button class="page-btn" onclick="(${onPage.toString()})(${current + 1})" ${current === total ? 'disabled' : ''}>Next →</button>`;
+    html += `<span class="page-info">${current} / ${total}</span>`;
+    container.innerHTML = html;
+  }
+
+  /* ───────────────────────────────────────────
+     UTILS
+  ─────────────────────────────────────────── */
+  function esc(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+</script>
+</body>
+</html>
